@@ -54,12 +54,17 @@ def execute_test(epoch, testconfig):
 
 config = loadtest_config()
 epoch = int(time.time())
+result_dir = config["result_dir"]
 
-if not os.path.exists("result/"):
-    os.makedirs("result/")
+if not os.path.exists(result_dir):
+    os.makedirs(result_dir)
 
 for test in config["tests"]:
     execute_test(epoch, test)
 
 print "Load test done. Timestamp used in stats:"
+
+with open("%slast" % result_dir, "w") as f:
+    f.write(str(epoch))
+
 print str(epoch)

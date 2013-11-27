@@ -12,11 +12,16 @@ import sys
 from config import loadtest_config
 
 config = loadtest_config()
+# TODO(oschaaf): ensure ends with '/'
+mypath = config["result_dir"]
+epoch = "0"
 
-# TODO: check, validate args, etc
-epoch = sys.argv[1]
+try:
+    with open(mypath + "last", 'r') as f:
+        epoch = f.read()
+except IOError:
+    print "No recent loadtests"
 
-mypath = "result/"
 files = [ f for f in os.listdir(mypath) ]
 results = []
 
@@ -42,6 +47,7 @@ def get_chart(test_name, test_stat, tuples):
         };\n\
         var div = document.createElement('div'); \n\
         div.id = 'chart_div_" + str(CHART_COUNT) + "'\n \
+        div.style = 'width: 400px;'\n \
         document.body.appendChild(div); \n\
         var chart = new google.visualization.LineChart(document.getElementById('chart_div_" + str(CHART_COUNT) + "'));\n\
         chart.draw(data, options);\n\
@@ -61,19 +67,24 @@ def write_stat(test_name, test_stat, results):
 
 for file in files:
     tmp = string.split(file, "-")
+
+    if len(tmp) != 3:
+        continue
     # Unpack filename into its components
     name = tmp[0]
     concurrency = tmp[1]
     stat_name = tmp[2]
 
     # Find requested stat
-    with open("result/%s" % file) as f:
+    with open("%s/%s" % (mypath, file)) as f:
         content = f.readlines()
         # TODO(oschaaf): efficiency
         content = [a for a in content if a.startswith(epoch)]
         
     # TODO(oschaaf): (handle bad array size (<>1)
-    results.append(name + "-" + stat_name + "-" + concurrency + "-" + string.split(content[0]," ")[1].strip() )
+    # TODO(oschaaf): doc when size <> 1
+    if len(content) == 1:
+        results.append(name + "-" + stat_name + "-" + concurrency + "-" + string.split(content[0]," ")[1].strip() )
 
 
 # TODO(oschaaf): sorting the files instead of the contents would be a lot more efficient
