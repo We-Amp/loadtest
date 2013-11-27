@@ -55,6 +55,9 @@ def execute_test(epoch, testconfig):
 config = loadtest_config()
 epoch = int(time.time())
 
+if not os.path.exists("result/"):
+    os.makedirs("result/")
+
 for test in config["tests"]:
     execute_test(epoch, test)
 
