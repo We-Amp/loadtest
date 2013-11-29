@@ -17,7 +17,7 @@ def process_result(epoch, test_name, concurrency, output, pattern):
         if not match is None:
             key, val = (match.group("key"), match.group("val"))
             if key and val:
-                with open("result/%s-%s-%s" % (test_name, concurrency, key), "a") as myfile:
+                with open("result/%s-%s-%s" % (test_name, key, concurrency), "a") as myfile:
                     myfile.write("%d %s\n" % (epoch, val))
 
 def replace_placeholders(s,ph):
