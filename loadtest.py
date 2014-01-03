@@ -9,7 +9,18 @@ import subprocess
 import time
 from config import loadtest_config
 
-def process_result(epoch, test_name, concurrency, output, pattern):
+
+def parse_ab_result(stderr, stdout):
+    result = {}
+    return result
+
+def parse_siege_result(stderr, stdout):
+    result = {}
+    return result
+
+
+def process_result(epoch, test_name, concurrency, stdout, stderr, pattern):
+    output = stdout + "\n" + stderr
     filter(lambda x: x in string.printable, output)
 
     for line in output.split("\n"):
@@ -17,6 +28,7 @@ def process_result(epoch, test_name, concurrency, output, pattern):
         if not match is None:
             key, val = (match.group("key"), match.group("val"))
             if key and val:
+                print "write [%d/%s] to %s" % (epoch, val, ("result/%s-%s-%s" % (test_name, key, concurrency)))
                 with open("result/%s-%s-%s" % (test_name, key, concurrency), "a") as myfile:
                     myfile.write("%d %s\n" % (epoch, val))
 
@@ -35,7 +47,8 @@ def execute_test(epoch, testconfig):
             popen_args[idx] = replace_placeholders(val, testconfig)
 
         print popen_args
-
+        # if testconfig["name"] != "abtest":
+        #    return True
         with open(os.devnull, "w") as fnull:
             p = subprocess.Popen(popen_args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
             # TODO(oschaaf): buffering the output might consume a lot of memory for siege.
@@ -43,16 +56,21 @@ def execute_test(epoch, testconfig):
             stdout,stderr = p.communicate()
             rc = p.wait()
             if rc != 0:
-                print "load tool error [%d]" % (rc)
+                print "load tool error [%d]:\n %s" % (rc, stderr)
                 return False
             else:
                 pattern = re.compile(testconfig["re_parse"], re.IGNORECASE)
-                process_result(epoch, testconfig["name"], concurrency, stdout + "\n" + stderr, pattern)
+                process_result(epoch, testconfig["name"], concurrency, stdout, stderr, pattern)
 
     return True
 
 
 config = loadtest_config()
+for key in config.keys():
+    for test in config["tests"]:
+        if not key in test.keys():
+            test[key] = config[key]
+
 epoch = int(time.time())
 result_dir = config["result_dir"]
 

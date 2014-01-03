@@ -18,7 +18,7 @@ def write_chart_values(values):
     return repr(values)[1:][:-1]
 
 
-def get_chart(test_names, x_title, y_title, test_stats, tuples):
+def get_chart(graph_name, x_title, y_title, test_stats, tuples):
     global CHART_COUNT
     CHART_COUNT = CHART_COUNT + 1
     for key, val in enumerate(test_stats):
@@ -32,15 +32,17 @@ def get_chart(test_names, x_title, y_title, test_stats, tuples):
 " + write_chart_values(tuples) + " \
         ]);\n\
         var options = {\n\
-          title: 'Test [x]', \n\
+          title: '" + graph_name + "', \n\
           vAxis: {title: " + repr(y_title)  + "}, \n\
           hAxis: {title: " + repr(x_title) + "}, \n\
           pointSize: 5, \n\
-          curveType: 'function' \n\
+          //curveType: 'function', \n\
+          width:600, \n\
+          height:500, \n\
         };\n\
         var div = document.createElement('div'); \n\
         div.id = 'chart_div_" + str(CHART_COUNT) + "'\n \
-        div.style = 'width: 100%;'\n \
+        div.style = 'width: 800px; height:600px;'\n \
         document.body.appendChild(div); \n\
         var chart = new google.visualization.LineChart(document.getElementById('chart_div_" + str(CHART_COUNT) + "'));\n\
         chart.draw(data, options);\n\
@@ -91,9 +93,13 @@ def get_data(config, graph_config):
         row.append(x)
         for test in test_config:
             for stat in stat_config:
-                with open(mypath + test + "-" + stat + "-" + str(x)) as file:
-                    lines = file.readlines()
-                    row.append(float(lines[len(lines)-1].split(" ")[1].strip()))
+                try:
+                    with open(mypath + test + "-" + stat + "-" + str(x)) as file:
+                        lines = file.readlines()
+                        row.append(float(lines[len(lines)-1].split(" ")[1].strip()))
+                except:
+                        row.append(-1)
+                    
         if len(row) == 0:
             print "aarg"
                 
@@ -133,14 +139,16 @@ try:
 except IOError:
     print "No recent loadtests"
 
+for key in config.keys():
+    for test in config["tests"]:
+        if not key in test.keys():
+            test[key] = config[key]
 
-graph_config = find_graph_config("Filter performance - Transactions", config)
-data = get_data(config, graph_config)
+for graph in config["graphs"]:
+    graph_config = find_graph_config(graph["name"], config)
+    data = get_data(config, graph_config)
+    html = get_chart( graph["name"], config["x_axis_caption"], config["y_axis_caption"], data["headers"], data["rows"]  )
+    scripts.append(html)
 
-html = get_chart( ["test 1"], "concurrencz", "# transactions", data["headers"], data["rows"]  )
-scripts.append(html)
-
-#html = get_chart( ["test 1"], "concurrencz", "# transactions", ["concurrency","transactsions","waaah", "aargh"], [[1,1.0,4.0,30],[2,40,5.0,30],[3,100,57,30]]  )
-#scripts.append(html)
 
 print template.replace("@CHART_SCRIPT@", string.join(scripts, "\n"))
