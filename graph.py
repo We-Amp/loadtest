@@ -17,7 +17,7 @@ def write_chart_values(values):
     return repr(values)[1:][:-1]
 
 
-def get_chart(graph_name, x_title, y_title, test_stats, tuples):
+def x_get_chart(graph_name, x_title, y_title, test_stats, tuples):
     global CHART_COUNT
     CHART_COUNT = CHART_COUNT + 1
     for key, val in enumerate(test_stats):
@@ -47,7 +47,7 @@ def get_chart(graph_name, x_title, y_title, test_stats, tuples):
     "
     return s 
 
-def x_get_chart(graph_name, x_title, y_title, test_stats, tuples):
+def get_chart(graph_name, x_title, y_title, test_stats, tuples):
     global CHART_COUNT
     CHART_COUNT = CHART_COUNT + 1
     for key, val in enumerate(test_stats):
