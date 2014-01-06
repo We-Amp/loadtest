@@ -49,31 +49,39 @@ def get_config():
                 "name": "Filter performance - availability",
                 "tests": ["PassThrough", "collapse whitespace", "rewrite css", "rewrite images", "rewrite domains", "rewrite js", "extend cache", "prioritize critical css", "insert dns prefetch"],
                 "stats": ["Availability"],
+                "y_axis_caption": "Percentage (%)",                
                 },
             {
                 "name": "Filter performance - rate",
                 "tests": ["PassThrough", "collapse whitespace", "rewrite css", "rewrite images", "rewrite domains", "rewrite js", "extend cache", "prioritize critical css", "insert dns prefetch"],
                 "stats": ["Transaction rate"],
+                "y_axis_caption": "QPS",
                 },
             {
                 "name": "Filter performance - response time",
                 "tests": ["PassThrough", "collapse whitespace", "rewrite css", "rewrite images", "rewrite domains", "rewrite js", "extend cache", "prioritize critical css", "insert dns prefetch"],
                 "stats": ["Response time"],
+                "y_axis_caption": "ms",
+
                 },
             {
                 "name": "Filter performance - longest transaction",
                 "tests": ["PassThrough", "collapse whitespace", "rewrite css", "rewrite images", "rewrite domains", "rewrite js", "extend cache", "prioritize critical css", "insert dns prefetch"],
                 "stats": ["Longest transaction"],
+                "y_axis_caption": "ms",
+
                 },
             {
                 "name": "Filter performance - throughput",
                 "tests": ["PassThrough", "collapse whitespace", "rewrite css", "rewrite images", "rewrite domains", "rewrite js", "extend cache", "prioritize critical css", "insert dns prefetch"],
                 "stats": ["Throughput"],
+                "y_axis_caption": "bytes",
                 },
             {
                 "name": "Filter performance - concurrency",
                 "tests": ["PassThrough", "collapse whitespace", "rewrite css", "rewrite images", "rewrite domains", "rewrite js", "extend cache", "prioritize critical css", "insert dns prefetch"],
                 "stats": ["Concurrency"],
+                "y_axis_caption": "Concurrent requests(?)",
                 },
             ]
     }
