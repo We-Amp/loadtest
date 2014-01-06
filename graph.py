@@ -2,6 +2,7 @@
 
 import copy
 import datetime
+import imp
 import os
 import pprint
 import re
@@ -9,8 +10,6 @@ import string
 import subprocess
 import time
 import sys
-
-from config import loadtest_config
 
 CHART_COUNT = 0
 
@@ -127,8 +126,17 @@ template = "<html>\n\
 </html>\n\
 "
 
+# TODO: remove code duplication with loadtest.py
+# TODO: handle invalid files.
 scripts = []
-config = loadtest_config()
+config_path = "config.py"
+
+if len(sys.argv) == 2:
+    config_path = sys.argv[1]
+
+config_mod = imp.load_source("config", config_path)
+
+config = config_mod.get_config()
 # TODO(oschaaf): ensure ends with '/'
 mypath = config["result_dir"]
 epoch = "0"

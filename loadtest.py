@@ -2,22 +2,13 @@
 
 import copy
 import datetime
+import imp
 import os
 import re
 import string
 import subprocess
+import sys
 import time
-from config import loadtest_config
-
-
-def parse_ab_result(stderr, stdout):
-    result = {}
-    return result
-
-def parse_siege_result(stderr, stdout):
-    result = {}
-    return result
-
 
 def process_result(epoch, test_name, concurrency, stdout, stderr, pattern):
     output = stdout + "\n" + stderr
@@ -65,7 +56,15 @@ def execute_test(epoch, testconfig):
     return True
 
 
-config = loadtest_config()
+config_path = "config.py"
+
+if len(sys.argv) == 2:
+    config_path = sys.argv[1]
+print "loading configuration from [%s]" % config_path
+config_mod = imp.load_source("config", config_path)
+
+config = config_mod.get_config()
+
 for key in config.keys():
     for test in config["tests"]:
         if not key in test.keys():
