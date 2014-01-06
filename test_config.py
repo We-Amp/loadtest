@@ -5,7 +5,7 @@ def get_config():
         "popen_args": ["siege", "-b", "@url@", "-c @concurrency@", "--time=@seconds@s"],
         "concurrencies": [1,10,100,200],
         "re_parse": r'(?P<key>[a-z\ ]*)[:][^0-9]*(?P<val>[0-9\.]*) ?[ a-z/\%\(\)\[\]\#]*$',
-        "x_axis_caption": "concurrency",
+        "x_axis_caption": "Concurrency",
         "y_axis_caption": "#",
         # TODO
         "type": "linechart", 
@@ -30,16 +30,19 @@ def get_config():
                 "name": "AB Time taken",
                 "tests": ["abtest"],
                 "stats": ["Time taken for tests"],
+                "y_axis_caption": "Seconds",
                 },
             {
                 "name": "AB Total transferred",
                 "tests": ["abtest"],
                 "stats": ["Total transferred"],
+                "y_axis_caption": "Bytes",
                 },
             {
                 "name": "Requests per second",
                 "tests": ["abtest"],
                 "stats": ["Requests per second"],
+                "y_axis_caption": "QPS",
                 },
 
             {

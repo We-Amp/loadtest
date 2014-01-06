@@ -22,6 +22,36 @@ def get_chart(graph_name, x_title, y_title, test_stats, tuples):
     CHART_COUNT = CHART_COUNT + 1
     for key, val in enumerate(test_stats):
         test_stats[key] = "'" + val + "'"
+    for key,val in enumerate(tuples):
+        val[0]=repr(val[0])
+    s = "\n \
+      google.setOnLoadCallback(drawChart_" + str(CHART_COUNT) + ");\n\
+      function drawChart_" + str(CHART_COUNT) + "() {\n\
+      var data = google.visualization.arrayToDataTable([\n\
+          [" + string.join(test_stats, ",\n") + "],\n\
+" + write_chart_values(tuples) + " \
+        ]);\n\
+        var options = {\n\
+          title: '" + graph_name + "', \n\
+          vAxis: {title: " + repr(y_title)  + "}, \n\
+          hAxis: {title: " + repr(x_title) + "}, \n\
+          height:500, \n\
+        };\n\
+        var div = document.createElement('div'); \n\
+        div.id = 'chart_div_" + str(CHART_COUNT) + "';\n \
+        div.style = 'width: 800px; height:600px;'\n \
+        document.body.appendChild(div); \n\
+        var chart = new google.visualization.ColumnChart(document.getElementById('chart_div_" + str(CHART_COUNT) + "'));\n\
+        chart.draw(data, options);\n\
+      }\n\
+    "
+    return s 
+
+def x_get_chart(graph_name, x_title, y_title, test_stats, tuples):
+    global CHART_COUNT
+    CHART_COUNT = CHART_COUNT + 1
+    for key, val in enumerate(test_stats):
+        test_stats[key] = "'" + val + "'"
 
     s = "\n \
       google.setOnLoadCallback(drawChart_" + str(CHART_COUNT) + ");\n\
@@ -34,9 +64,6 @@ def get_chart(graph_name, x_title, y_title, test_stats, tuples):
           title: '" + graph_name + "', \n\
           vAxis: {title: " + repr(y_title)  + "}, \n\
           hAxis: {title: " + repr(x_title) + "}, \n\
-          pointSize: 5, \n\
-          //curveType: 'function', \n\
-          width:600, \n\
           height:500, \n\
         };\n\
         var div = document.createElement('div'); \n\
@@ -48,6 +75,7 @@ def get_chart(graph_name, x_title, y_title, test_stats, tuples):
       }\n\
     "
     return s 
+
 
 def find_graph_config(graph_name, config):
     graph_config = None
@@ -155,7 +183,12 @@ for key in config.keys():
 for graph in config["graphs"]:
     graph_config = find_graph_config(graph["name"], config)
     data = get_data(config, graph_config)
-    html = get_chart( graph["name"], config["x_axis_caption"], config["y_axis_caption"], data["headers"], data["rows"]  )
+
+    y_axis_caption = config["y_axis_caption"]
+    if  "y_axis_caption" in graph:
+        y_axis_caption = graph['y_axis_caption']
+        
+    html = get_chart( graph["name"], config["x_axis_caption"], y_axis_caption, data["headers"], data["rows"]  )
     scripts.append(html)
 
 
