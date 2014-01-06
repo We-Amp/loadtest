@@ -86,9 +86,63 @@ def find_graph_config(graph_name, config):
             break
     
     return graph_config
-    
 
-def get_data(config, graph_config):
+def find_stat(lines, epoch):
+    epoch = int(epoch)
+    if epoch == 0:
+        return lines[len(lines)-1]
+    else:
+        for line in reversed(lines):
+            tmp = line.split(" ")
+            if int(tmp[0].strip()) == epoch:
+                return float(tmp[1].strip());
+    return None
+
+
+def filter_invalid_rows(result):
+    rows = result["rows"]
+    invalid_row_indexes = []
+
+    for row_idx, row in enumerate(rows):
+        valid = False
+        for idx, val in enumerate(row):
+            # not interested in the x-axis, skip
+            if idx == 0: continue
+            if val != -1 and val != -2:
+                valid = True
+                break
+        if valid == False:
+            invalid_row_indexes.append(row_idx)
+
+    for idx in reversed(invalid_row_indexes):
+        del rows[idx]
+
+    return result
+
+def filter_invalid_columns(result):
+    rows = result["rows"]
+    row_count = len(rows)
+    invalid_column_indexes = []
+    if row_count > 0:
+        first_row = rows[0]
+        row_len = len(first_row)
+        
+        for i in range(0, row_len):
+            valid = False
+            for j in range(0, row_count):
+                if rows[j][i] != -1 and rows[j][i] != -2:
+                    valid = True
+                    break
+            if not valid:
+                invalid_column_indexes.append(i)
+    for idx in reversed(invalid_column_indexes):
+        for row in rows:
+            del row[idx]
+        del result["headers"][idx]
+
+    return result
+
+def get_data(config, graph_config, epoch):
     files = []
 
     for (dirpath, dirnames, filenames) in os.walk(mypath):
@@ -101,7 +155,6 @@ def get_data(config, graph_config):
     test_config = graph_config["tests"]
     stat_config = graph_config["stats"]
 
-    result = {}
     headers = ["X"]
     rows = []
     x_values = []
@@ -123,20 +176,26 @@ def get_data(config, graph_config):
                 try:
                     with open(mypath + test + "-" + stat + "-" + str(x)) as file:
                         lines = file.readlines()
-                        row.append(float(lines[len(lines)-1].split(" ")[1].strip()))
-                except:
+                        stat_value = find_stat(lines, epoch);
+                        if not stat_value is None:
+                            row.append(stat_value)
+                        else:
+                            row.append(-2)
+                except IOError:
+                        # TODO(oschaaf): improve/no magic numbers
                         row.append(-1)
-                    
-        if len(row) == 0:
-            print "aarg"
-                
+
+
     # TODO(oschaaf): make sure these are sorted
     for test in test_config:
         for stat in stat_config:
             headers.append(test + " - " + stat)
 
+    result = {}
     result["headers"] = headers
     result["rows"] = rows
+    result = filter_invalid_columns(result)
+    result = filter_invalid_rows(result)
     return result
 
 
@@ -182,8 +241,10 @@ for key in config.keys():
 
 for graph in config["graphs"]:
     graph_config = find_graph_config(graph["name"], config)
-    data = get_data(config, graph_config)
+    data = get_data(config, graph_config, epoch)
 
+    # TODO(oschaaf): 'inherit' y_axis_caption from the global config.
+    # Perhaps we should do that for other properties too.
     y_axis_caption = config["y_axis_caption"]
     if  "y_axis_caption" in graph:
         y_axis_caption = graph['y_axis_caption']
