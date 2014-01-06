@@ -12,12 +12,15 @@ import time
 import sys
 
 CHART_COUNT = 0
+STAT_FILE_ERROR = -1
+STAT_NO_VALUE = -2
+
 
 def write_chart_values(values):
     return repr(values)[1:][:-1]
 
 
-def x_get_chart(graph_name, x_title, y_title, test_stats, tuples):
+def get_column_chart(graph_name, x_title, y_title, test_stats, tuples):
     global CHART_COUNT
     CHART_COUNT = CHART_COUNT + 1
     for key, val in enumerate(test_stats):
@@ -47,7 +50,7 @@ def x_get_chart(graph_name, x_title, y_title, test_stats, tuples):
     "
     return s 
 
-def get_chart(graph_name, x_title, y_title, test_stats, tuples):
+def get_line_chart(graph_name, x_title, y_title, test_stats, tuples):
     global CHART_COUNT
     CHART_COUNT = CHART_COUNT + 1
     for key, val in enumerate(test_stats):
@@ -108,7 +111,7 @@ def filter_invalid_rows(result):
         for idx, val in enumerate(row):
             # not interested in the x-axis, skip
             if idx == 0: continue
-            if val != -1 and val != -2:
+            if val != STAT_FILE_ERROR and val != STAT_NO_VALUE:
                 valid = True
                 break
         if valid == False:
@@ -130,7 +133,7 @@ def filter_invalid_columns(result):
         for i in range(0, row_len):
             valid = False
             for j in range(0, row_count):
-                if rows[j][i] != -1 and rows[j][i] != -2:
+                if rows[j][i] != STAT_FILE_ERROR and rows[j][i] != STAT_NO_VALUE:
                     valid = True
                     break
             if not valid:
@@ -180,10 +183,10 @@ def get_data(config, graph_config, epoch):
                         if not stat_value is None:
                             row.append(stat_value)
                         else:
-                            row.append(-2)
+                            row.append(STAT_NO_VALUE)
                 except IOError:
                         # TODO(oschaaf): improve/no magic numbers
-                        row.append(-1)
+                        row.append(STAT_FILE_ERROR)
 
 
     # TODO(oschaaf): make sure these are sorted
@@ -244,12 +247,20 @@ for graph in config["graphs"]:
     data = get_data(config, graph_config, epoch)
 
     # TODO(oschaaf): 'inherit' y_axis_caption from the global config.
-    # Perhaps we should do that for other properties too.
+    # Perhaps that should be done for other properties too.
     y_axis_caption = config["y_axis_caption"]
     if  "y_axis_caption" in graph:
         y_axis_caption = graph['y_axis_caption']
-        
-    html = get_chart( graph["name"], config["x_axis_caption"], y_axis_caption, data["headers"], data["rows"]  )
+
+    graph_type = "line"
+    if "type" in graph:
+        graph_type = graph["type"]
+    if graph_type == "line":
+        html = get_line_chart( graph["name"], config["x_axis_caption"], y_axis_caption, data["headers"], data["rows"]  )
+    elif graph_type == "column":
+        html = get_column_chart( graph["name"], config["x_axis_caption"], y_axis_caption, data["headers"], data["rows"]  )
+    else:
+        raise Error("Invalid chart type: [%s]" % graph_type)
     scripts.append(html)
 
 

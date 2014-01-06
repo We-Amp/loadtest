@@ -8,7 +8,6 @@ def get_config():
         "x_axis_caption": "Concurrency",
         "y_axis_caption": "#",
         # TODO
-        "type": "linechart", 
         "host": "127.0.0.1",
         "tests": 
         [
@@ -31,6 +30,7 @@ def get_config():
                 "tests": ["abtest"],
                 "stats": ["Time taken for tests"],
                 "y_axis_caption": "Seconds",
+                "type": "column",
                 },
             {
                 "name": "AB Total transferred",
