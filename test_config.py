@@ -9,6 +9,7 @@ def get_config():
         "y_axis_caption": "#",
         # TODO
         "host": "127.0.0.1",
+        "test_store_headers": ["X-Page-Speed", "Server"],
         "tests": 
         [
             {
@@ -30,7 +31,6 @@ def get_config():
                 "tests": ["abtest"],
                 "stats": ["Time taken for tests"],
                 "y_axis_caption": "Seconds",
-                "type": "column",
                 },
             {
                 "name": "AB Total transferred",
@@ -50,26 +50,28 @@ def get_config():
                 "tests": ["PassThrough", "collapse whitespace", "rewrite css", "rewrite images", "rewrite domains", "rewrite js", "extend cache", "prioritize critical css", "insert dns prefetch"],
                 "stats": ["Availability"],
                 "y_axis_caption": "Percentage (%)",                
+                "type": "column",
                 },
             {
                 "name": "Filter performance - rate",
                 "tests": ["PassThrough", "collapse whitespace", "rewrite css", "rewrite images", "rewrite domains", "rewrite js", "extend cache", "prioritize critical css", "insert dns prefetch"],
                 "stats": ["Transaction rate"],
                 "y_axis_caption": "QPS",
+                "type": "column",
                 },
             {
                 "name": "Filter performance - response time",
                 "tests": ["PassThrough", "collapse whitespace", "rewrite css", "rewrite images", "rewrite domains", "rewrite js", "extend cache", "prioritize critical css", "insert dns prefetch"],
                 "stats": ["Response time"],
                 "y_axis_caption": "ms",
-
+                "type": "column",
                 },
             {
                 "name": "Filter performance - longest transaction",
                 "tests": ["PassThrough", "collapse whitespace", "rewrite css", "rewrite images", "rewrite domains", "rewrite js", "extend cache", "prioritize critical css", "insert dns prefetch"],
                 "stats": ["Longest transaction"],
                 "y_axis_caption": "ms",
-
+                "type": "column",
                 },
             {
                 "name": "Filter performance - throughput",
@@ -82,6 +84,7 @@ def get_config():
                 "tests": ["PassThrough", "collapse whitespace", "rewrite css", "rewrite images", "rewrite domains", "rewrite js", "extend cache", "prioritize critical css", "insert dns prefetch"],
                 "stats": ["Concurrency"],
                 "y_axis_caption": "Concurrent requests(?)",
+                "type": "column",
                 },
             ]
     }

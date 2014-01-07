@@ -10,6 +10,7 @@ def get_config():
         # TODO
         "type": "linechart", 
         "host": "127.0.0.1",
+        "test_store_headers": ["X-Page-Speed", "Server"],
         "tests": 
         [
             {

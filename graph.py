@@ -211,7 +211,7 @@ template = "<html>\n\
     </script> \n\
   </head>\n\
   <body>\n\
-     <h1>Loadtest results</h1> \n\
+     <h1>Loadtest results @DATETIME@ (@METADATA@)</h1> \n\
   </body>\n\
 </html>\n\
 "
@@ -230,10 +230,13 @@ config = config_mod.get_config()
 # TODO(oschaaf): ensure ends with '/'
 mypath = config["result_dir"]
 epoch = "0"
-
+metadata = []
 try:
     with open(mypath + "last", 'r') as f:
-        epoch = f.read()        
+        lines = f.readlines()
+        line =lines[len(lines)-1]
+        epoch = line.split(" ")[0]
+        metadata = line.split(" ")[1]
 except IOError:
     print "No recent loadtests"
 
@@ -264,4 +267,9 @@ for graph in config["graphs"]:
     scripts.append(html)
 
 
-print template.replace("@CHART_SCRIPT@", string.join(scripts, "\n"))
+template = template.replace("@CHART_SCRIPT@", string.join(scripts, "\n"))
+dt = datetime.datetime.fromtimestamp(float(epoch))
+template = template.replace("@DATETIME@", str(dt))
+template = template.replace("@METADATA@", metadata.replace(":"," "))
+
+print template

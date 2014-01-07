@@ -9,6 +9,7 @@ import string
 import subprocess
 import sys
 import time
+import urllib2
 
 def process_result(epoch, test_name, concurrency, stdout, stderr, pattern):
     output = stdout + "\n" + stderr
@@ -76,12 +77,20 @@ result_dir = config["result_dir"]
 if not os.path.exists(result_dir):
     os.makedirs(result_dir)
 
+store_headers = config["test_store_headers"]
+test_meta_data = ""
+if len(store_headers) > 0:
+    response = urllib2.urlopen("http://" + config["host"]  + "/")
+    for header in store_headers:
+        test_meta_data = "%s%s:%s:" % (test_meta_data, header, response.info()[header])
+
+print test_meta_data
+
 for test in config["tests"]:
     execute_test(epoch, test)
 
+with open("%slast" % result_dir, "a") as f:
+    f.write("%s %s\n" % (str(epoch), test_meta_data))
+
 print "Load test done. Timestamp used in stats:"
-
-with open("%slast" % result_dir, "w") as f:
-    f.write(str(epoch))
-
 print str(epoch)
