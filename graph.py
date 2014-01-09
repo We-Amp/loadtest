@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+from collections import OrderedDict
 import copy
 import datetime
 import imp
@@ -19,7 +20,9 @@ STAT_NO_VALUE = -2
 def write_chart_values(values):
     return repr(values)[1:][:-1]
 
-
+# TODO(oschaaf): it looks like get_column_chart and get_line_chart
+# could easily be merged into one function where graph type is a parameter.
+# Unless other options make us diverge later on.
 def get_column_chart(graph_name, x_title, y_title, test_stats, tuples):
     global CHART_COUNT
     CHART_COUNT = CHART_COUNT + 1
@@ -90,6 +93,9 @@ def find_graph_config(graph_name, config):
     
     return graph_config
 
+# Find the stat value for the specified
+# epoch timestamp. Returns the last value if epoch
+# equals zero, None if no value was found
 def find_stat(lines, epoch):
     epoch = int(epoch)
     if epoch == 0:
@@ -102,6 +108,7 @@ def find_stat(lines, epoch):
     return None
 
 
+# filters out rows that only have missing or error stat values
 def filter_invalid_rows(result):
     rows = result["rows"]
     invalid_row_indexes = []
@@ -122,6 +129,7 @@ def filter_invalid_rows(result):
 
     return result
 
+# filters out columns that only have missing or error stat values
 def filter_invalid_columns(result):
     rows = result["rows"]
     row_count = len(rows)
@@ -145,16 +153,9 @@ def filter_invalid_columns(result):
 
     return result
 
-def get_data(config, graph_config, epoch):
-    files = []
 
-    for (dirpath, dirnames, filenames) in os.walk(mypath):
-        files.extend(filenames)
-        break
-
-    # filter out files that are not related to test results
-    files = [a for a in files if len(a.split("-")) == 3]
-    files = sorted(files, key=lambda x: (int(x.split("-")[2]), x.split("-")[0], x.split("-")[1] ))
+def get_data(config, graph_config, epoch, result_dir):
+    files = get_test_stat_filenames(result_dir)
     test_config = graph_config["tests"]
     stat_config = graph_config["stats"]
 
@@ -177,7 +178,7 @@ def get_data(config, graph_config, epoch):
         for test in test_config:
             for stat in stat_config:
                 try:
-                    with open(mypath + test + "-" + stat + "-" + str(x)) as file:
+                    with open(result_dir + test + "-" + stat + "-" + str(x)) as file:
                         lines = file.readlines()
                         stat_value = find_stat(lines, epoch);
                         if not stat_value is None:
@@ -185,9 +186,7 @@ def get_data(config, graph_config, epoch):
                         else:
                             row.append(STAT_NO_VALUE)
                 except IOError:
-                        # TODO(oschaaf): improve/no magic numbers
                         row.append(STAT_FILE_ERROR)
-
 
     # TODO(oschaaf): make sure these are sorted
     for test in test_config:
@@ -216,6 +215,122 @@ template = "<html>\n\
 </html>\n\
 "
 
+def write_concurrency_graphs(template, config, result_dir):
+    epoch = "0"
+    metadata = []
+
+    try:
+        with open(result_dir + "last", 'r') as f:
+            lines = f.readlines()
+            line =lines[len(lines)-1]
+            epoch = line.split(" ")[0]
+            metadata = line.split(" ")[1]
+    except IOError:
+        print "No recent loadtests"
+        
+    for key in config.keys():
+        for test in config["tests"]:
+            if not key in test.keys():
+                test[key] = config[key]
+                
+    for graph in config["graphs"]:
+        graph_config = find_graph_config(graph["name"], config)
+        data = get_data(config, graph_config, epoch, result_dir)
+            
+        # TODO(oschaaf): 'inherit' y_axis_caption from the global config.
+        # Perhaps that should be done for other properties too.
+        y_axis_caption = config["y_axis_caption"]
+        if  "y_axis_caption" in graph:
+            y_axis_caption = graph['y_axis_caption']
+            
+        graph_type = "line"
+        if "type" in graph:
+            graph_type = graph["type"]
+        if graph_type == "line":
+            html = get_line_chart( graph["name"], config["x_axis_caption"], y_axis_caption, data["headers"], data["rows"]  )
+        elif graph_type == "column":
+            html = get_column_chart( graph["name"], config["x_axis_caption"], y_axis_caption, data["headers"], data["rows"]  )
+        else:
+            raise Error("Invalid chart type: [%s]" % graph_type)
+        scripts.append(html)                  
+
+    template = template.replace("@CHART_SCRIPT@", string.join(scripts, "\n"))
+    dt = datetime.datetime.fromtimestamp(float(epoch))
+    template = template.replace("@DATETIME@", str(dt))
+    template = template.replace("@METADATA@", metadata.replace(":"," "))
+
+    print template
+    
+
+def get_test_stat_filenames(result_dir):
+    files = []
+
+    for (dirpath, dirnames, filenames) in os.walk(result_dir):
+        files.extend(filenames)
+        break
+
+    # filter out files that are not related to test results
+    files = [a for a in files if len(a.split("-")) == 3]
+    files = sorted(files, key=lambda x: (int(x.split("-")[2]), x.split("-")[0], x.split("-")[1] ))
+    return files
+
+def write_historic_graphs(template, config, result_dir):
+    files = get_test_stat_filenames(result_dir)
+
+    scripts = []
+    # find all the stats that belong to a test. display the history
+    # for these stats (combining all the different concurrencies for the test into 1 graph
+    for graph in config["graphs"]:
+        graph_config = find_graph_config(graph["name"], config)
+        for test in graph_config["tests"]:
+            for stat in graph_config["stats"]:
+                headers = ["Time"]
+                d = OrderedDict()
+                test_stat_files = [a for a in files if a.startswith(test + "-" + stat)]
+                colcount = len(test_stat_files)
+                current_col = 0
+                if len(test_stat_files) > 0:
+                    for filename in test_stat_files:
+                        headers.append(filename)
+                        with open("%s/%s" % (result_dir, filename)) as f:
+                            for line in f:
+                                tmp = line.split(" ")
+                                epoch = int(tmp[0])
+                                if not epoch in d:
+                                    d[epoch] = []
+                                    row = d[epoch]
+                                    while len(row) < colcount:
+                                        # pad the new row  out with STAT_NO_VALUE;
+                                        row.append(STAT_NO_VALUE)
+                                row = d[epoch]
+                                row[current_col] = float(tmp[1])
+                            current_col = current_col + 1
+                    
+                # TODO(oschaaf): refactor, ugly
+                res = []
+                for key in d:
+                    d[key].insert(0, key)
+                    res.append(d[key])
+
+                result = {}
+                result["headers"] = headers
+                result["rows"] = res
+                result = filter_invalid_columns(result)
+                result = filter_invalid_rows(result)
+
+                scripts.append(get_line_chart(graph["name"], "X title", "y_title", result["headers"], result["rows"]))
+
+
+
+
+    template = template.replace("@CHART_SCRIPT@", string.join(scripts, "\n"))
+    dt = datetime.datetime.now()
+    template = template.replace("@DATETIME@", str(dt))
+    template = template.replace("@METADATA@", "")
+
+    print template
+    
+
 # TODO: remove code duplication with loadtest.py
 # TODO: handle invalid files.
 scripts = []
@@ -225,51 +340,9 @@ if len(sys.argv) == 2:
     config_path = sys.argv[1]
 
 config_mod = imp.load_source("config", config_path)
-
 config = config_mod.get_config()
 # TODO(oschaaf): ensure ends with '/'
-mypath = config["result_dir"]
-epoch = "0"
-metadata = []
-try:
-    with open(mypath + "last", 'r') as f:
-        lines = f.readlines()
-        line =lines[len(lines)-1]
-        epoch = line.split(" ")[0]
-        metadata = line.split(" ")[1]
-except IOError:
-    print "No recent loadtests"
+result_dir = config["result_dir"]
 
-for key in config.keys():
-    for test in config["tests"]:
-        if not key in test.keys():
-            test[key] = config[key]
-
-for graph in config["graphs"]:
-    graph_config = find_graph_config(graph["name"], config)
-    data = get_data(config, graph_config, epoch)
-
-    # TODO(oschaaf): 'inherit' y_axis_caption from the global config.
-    # Perhaps that should be done for other properties too.
-    y_axis_caption = config["y_axis_caption"]
-    if  "y_axis_caption" in graph:
-        y_axis_caption = graph['y_axis_caption']
-
-    graph_type = "line"
-    if "type" in graph:
-        graph_type = graph["type"]
-    if graph_type == "line":
-        html = get_line_chart( graph["name"], config["x_axis_caption"], y_axis_caption, data["headers"], data["rows"]  )
-    elif graph_type == "column":
-        html = get_column_chart( graph["name"], config["x_axis_caption"], y_axis_caption, data["headers"], data["rows"]  )
-    else:
-        raise Error("Invalid chart type: [%s]" % graph_type)
-    scripts.append(html)
-
-
-template = template.replace("@CHART_SCRIPT@", string.join(scripts, "\n"))
-dt = datetime.datetime.fromtimestamp(float(epoch))
-template = template.replace("@DATETIME@", str(dt))
-template = template.replace("@METADATA@", metadata.replace(":"," "))
-
-print template
+# write_concurrency_graphs(template, config, result_dir)
+write_historic_graphs(template, config, result_dir)
