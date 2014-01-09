@@ -79,6 +79,7 @@ def get_line_chart(graph_name, x_title, y_title, test_stats, tuples):
           vAxis: {title: " + repr(y_title)  + "}, \n\
           hAxis: {title: " + repr(x_title) + "}, \n\
           height:500, \n\
+          pointSize: 5\
         };\n\
         var div = document.createElement('div'); \n\
         div.id = 'chart_div_" + str(CHART_COUNT) + "'\n \
@@ -226,6 +227,7 @@ template = "<html>\n\
 def write_concurrency_graphs(template, config, result_dir):
     epoch = "0"
     metadata = []
+    scripts = []
 
     try:
         with open(result_dir + "last", 'r') as f:
@@ -294,9 +296,12 @@ def write_historic_graphs(template, config, result_dir):
             for stat in graph_config["stats"]:
                 headers = ["Time"]
                 d = OrderedDict()
-                test_stat_files = [a for a in files if a.startswith(test + "-" + stat)]
+                # TODO(oschaaf): only used configured concurrencies
+                test_stat_files = [a for a in files if a.startswith(test + "-" + stat + "-")]
                 colcount = len(test_stat_files)
                 current_col = 0
+                # TODO(oschaaf): filter graph.test to only contain tests that actually also exist
+                # in the tests configuration (?)
                 if len(test_stat_files) > 0:
                     for filename in test_stat_files:
                         headers.append(filename)
@@ -313,10 +318,11 @@ def write_historic_graphs(template, config, result_dir):
                                 row = d[epoch]
                                 row[current_col] = float(tmp[1])
                             current_col = current_col + 1
-                    
+
                 # TODO(oschaaf): refactor, ugly
                 res = []
                 for key in d:
+                    # Javascript Date objects use ms instead of seconds to initialize
                     d[key].insert(0, "new Date(" + str(int(key)*1000) + ")")
                     res.append(d[key])
 
@@ -339,9 +345,7 @@ def write_historic_graphs(template, config, result_dir):
     print template
     
 
-# TODO: remove code duplication with loadtest.py
 # TODO: handle invalid files.
-scripts = []
 config_path = "config.py"
 
 if len(sys.argv) == 2:
@@ -352,5 +356,5 @@ config = config_mod.get_config()
 # TODO(oschaaf): ensure ends with '/'
 result_dir = config["result_dir"]
 
-# write_concurrency_graphs(template, config, result_dir)
-write_historic_graphs(template, config, result_dir)
+write_concurrency_graphs(template, config, result_dir)
+# write_historic_graphs(template, config, result_dir)

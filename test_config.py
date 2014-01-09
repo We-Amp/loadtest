@@ -1,9 +1,9 @@
 def get_config():
     config = {
         "result_dir": "result/",
-        "seconds": "10",
+        "seconds": "20",
         "popen_args": ["siege", "-b", "@url@", "-c @concurrency@", "--time=@seconds@s"],
-        "concurrencies": [1,10,100,200],
+        "concurrencies": [1,10,50,100,200],
         "re_parse": r'(?P<key>[a-z\ ]*)[:][^0-9]*(?P<val>[0-9\.]*) ?[ a-z/\%\(\)\[\]\#]*$',
         "x_axis_caption": "Concurrency",
         "y_axis_caption": "#",
@@ -14,7 +14,7 @@ def get_config():
         [
             {
                 "name": "abtest",
-                "popen_args": ["ab", "-n 1000", "-c @concurrency@", "-k", "http://@host@/mod_pagespeed_example/"],
+                "popen_args": ["ab", "-n 10000", "-c @concurrency@", "-k", "http://@host@/mod_pagespeed_example/"],
                 },
             {
                 "name": "PassThrough",
