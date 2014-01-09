@@ -17,8 +17,16 @@ STAT_FILE_ERROR = -1
 STAT_NO_VALUE = -2
 
 
+# TODO(oschaaf): fix trailing comma's, not all browsers take them well
 def write_chart_values(values):
-    return repr(values)[1:][:-1]
+    s = []
+    for row in values:
+        s.append("[")
+        for val in row:
+            s.append(str(val))
+            s.append(",")
+        s.append("],")
+    return string.join(s, "")
 
 # TODO(oschaaf): it looks like get_column_chart and get_line_chart
 # could easily be merged into one function where graph type is a parameter.
@@ -309,7 +317,7 @@ def write_historic_graphs(template, config, result_dir):
                 # TODO(oschaaf): refactor, ugly
                 res = []
                 for key in d:
-                    d[key].insert(0, key)
+                    d[key].insert(0, "new Date(" + str(int(key)*1000) + ")")
                     res.append(d[key])
 
                 result = {}
