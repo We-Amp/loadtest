@@ -246,7 +246,8 @@ def write_concurrency_graphs(template, config, result_dir):
     for graph in config["graphs"]:
         graph_config = find_graph_config(graph["name"], config)
         data = get_data(config, graph_config, epoch, result_dir)
-            
+        if len(data["rows"]) == 0:
+            continue
         # TODO(oschaaf): 'inherit' y_axis_caption from the global config.
         # Perhaps that should be done for other properties too.
         y_axis_caption = config["y_axis_caption"]
@@ -332,7 +333,8 @@ def write_historic_graphs(template, config, result_dir):
                 result = filter_invalid_columns(result)
                 result = filter_invalid_rows(result)
 
-                scripts.append(get_line_chart(graph["name"], "X title", "y_title", result["headers"], result["rows"]))
+                if len(result["rows"]) > 0:
+                    scripts.append(get_line_chart(graph["name"], "X title", "y_title", result["headers"], result["rows"]))
 
 
 
@@ -356,5 +358,5 @@ config = config_mod.get_config()
 # TODO(oschaaf): ensure ends with '/'
 result_dir = config["result_dir"]
 
-write_concurrency_graphs(template, config, result_dir)
-# write_historic_graphs(template, config, result_dir)
+# write_concurrency_graphs(template, config, result_dir)
+write_historic_graphs(template, config, result_dir)
