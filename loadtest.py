@@ -11,6 +11,9 @@ import sys
 import time
 import urllib2
 
+# TODO(oschaaf): nice messages when required external programs don't exist:
+# siege, ab, etc
+
 def process_result(epoch, test_name, concurrency, stdout, stderr, pattern):
     output = stdout + "\n" + stderr
     filter(lambda x: x in string.printable, output)
@@ -80,7 +83,13 @@ if not os.path.exists(result_dir):
 store_headers = config["test_store_headers"]
 test_meta_data = ""
 if len(store_headers) > 0:
-    response = urllib2.urlopen("http://" + config["host"]  + "/")
+    # TODO(oschaaf): figure out how to best configure this:
+    test_url = "http://" + config["host"]  + "/"
+    try:
+        response = urllib2.urlopen(test_url)
+    except urllib2.URLError as e:
+        print "Failed to open [%s]: %s" % (test_url, e)
+        sys.exit(-1)
     for header in store_headers:
         test_meta_data = "%s%s:%s:" % (test_meta_data, header, response.info()[header])
 

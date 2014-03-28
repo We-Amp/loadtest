@@ -358,5 +358,5 @@ config = config_mod.get_config()
 # TODO(oschaaf): ensure ends with '/'
 result_dir = config["result_dir"]
 
-# write_concurrency_graphs(template, config, result_dir)
-write_historic_graphs(template, config, result_dir)
+write_concurrency_graphs(template, config, result_dir)
+# write_historic_graphs(template, config, result_dir)
